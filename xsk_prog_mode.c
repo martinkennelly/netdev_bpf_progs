@@ -1,9 +1,11 @@
 /* SPDX-License-Identifier: GPL-2.0 */
+/* Author: Martin Kennelly - dalykennelly at gmail dot com */
+#include <errno.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
+
 #include <linux/if_xdp.h>
 #include <linux/if_link.h>
 #include <net/if.h>
@@ -11,14 +13,11 @@
 #include <bpf/bpf.h>
 #include <bpf/libbpf.h>
 
-
 #define EXIT_GOOD 0
 #define EXIT_FAIL 1
 #define MAX_IFNAME_LEN 1000
 #define MAX_PROG_NAME 1000
 #define MAX_ATTACH_MODE_NAME 50
-
-/* Author: Martin Kennelly - dalykennelly at gmail dot com */
 
 struct option_wrapper {
   struct option option;
@@ -61,7 +60,6 @@ int unwrap_options(const struct option_wrapper *wrapper,
   *options = new_options;
   return 0;
 }
-
 
 void parse_args(int argc, char **argv, const struct option_wrapper *options,
                 struct config *cfg)
