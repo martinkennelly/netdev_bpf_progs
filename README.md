@@ -4,6 +4,13 @@ Output a user defined netdev's BPF program ID and the program's attached mode
 ## Usage
 ./xsk_prog_mode -i ${interface_name}
 
+## Sample execution
+```bash
+./xsk_prog_mode -i eno1
+Program ID:     17
+Attached mode:  XDP_ATTACHED_DRV - Attached with driver support
+```
+
 ## Testing
 Tested on Debian 10 Linux kernel 5.4.3
 
