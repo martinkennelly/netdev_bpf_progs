@@ -94,14 +94,13 @@ void parse_args(int argc, char **argv, const struct option_wrapper *options,
   struct option *long_options;
   int longindex = 0;
   int opt;
-  const char *usage = "Find eBPF program ID and attached mode for a "
-                      "given interface\n\n"
-                      "Usage:\nHelp: -h\nInterface: -i\n\n"
-                      "Select an interface to scan for eBPF program ID and "
-                      "its attached mode\n";
+  const char *usage = "Find BPF program and map information for a "
+                      "given netdev\n\n"
+                      "Usage:\nSpecify netdevice name after flag 'i'\n"
+                      "e.g './xsk_prog_map_info -i eno1'\n\n";
 
   if (unwrap_options(options, &long_options)) {
-    fprintf(stderr, "Failed to allocate memory\n");
+    fprintf(stderr, "Error: Failed to allocate memory\n");
     exit(EXIT_FAIL);
   }
 
@@ -115,7 +114,7 @@ void parse_args(int argc, char **argv, const struct option_wrapper *options,
       /* interface option */
       case 'i':
         if (strlen(optarg) > MAX_IFNAME_LEN) {
-          fprintf(stderr, "Interface name is too long\n");
+          fprintf(stderr, "Error: Interface name is too long\n");
           goto error;
         }
 
