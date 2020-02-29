@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
-#include <linux/if_xdp.h>
 #include <linux/if_link.h>
 #include <net/if.h>
 
@@ -255,6 +255,27 @@ void print_map_details(__u32 prog_id)
   free(map_ids);
 }
 
+void print_prog_details(struct config *cfg) {
+  if (find_int_prog(cfg->ifindex, cfg)) {
+    fprintf(stdout, "Failed to find program ID on this interface\n");
+    exit(EXIT_GOOD);
+  }
+
+  if (!cfg->link_info.prog_id) {
+    printf("No XDP program attached to interface '%s'\n", cfg->ifname);
+    exit(EXIT_GOOD);
+  }
+
+  if (convert_attach_mode_str(cfg)) {
+    fprintf(stderr, "Error: Failed to convert attached mode to string\n");
+      exit(EXIT_FAIL);
+  }
+
+  printf("# netdev BPF program information\n");
+  printf("\tid: %u\n", cfg->link_info.prog_id);
+  printf("\tattached mode: %s\n", cfg->attach_mode_buff);
+}
+
 int main(int argc, char **argv)
 {
   struct config cfg = {
@@ -270,23 +291,8 @@ int main(int argc, char **argv)
     return EXIT_FAIL;
   }
 
-  if (find_int_prog(cfg.ifindex, &cfg)) {
-    fprintf(stdout, "Failed to find program ID on this interface\n");
-    return EXIT_GOOD;
-  }
-
-  if (!cfg.link_info.prog_id) {
-    printf("No XDP program attached to interface '%s'\n", cfg.ifname);
-    return EXIT_GOOD;
-  }
-
-  if (convert_attach_mode_str(&cfg)) {
-    fprintf(stderr, "Failed to convert attached mode to string");
-      return EXIT_FAIL;
-  }
-
-  printf("Program ID:     %u\n", cfg.link_info.prog_id);
-  printf("Attached mode:  %s\n", cfg.attach_mode_buff);
+  print_prog_details(&cfg);
+  print_map_details(cfg.link_info.prog_id);
 
   return EXIT_GOOD;
 }
