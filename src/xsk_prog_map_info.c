@@ -283,6 +283,11 @@ int main(int argc, char **argv)
     .ifname_buff = "",
   };
 
+  if (getuid()) {
+    fprintf(stderr, "Error: Run this application as root user\n");
+    return EXIT_FAIL;
+  }
+
   parse_args(argc, argv, long_options, &cfg);
 
   if (cfg.ifindex == -1) {
