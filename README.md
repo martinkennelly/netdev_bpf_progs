@@ -1,33 +1,46 @@
 # netdev_bpf_progs
-Output a user defined netdev's BPF program ID and the program's attached mode
+A tool for inspecting a netdev's BPF programs & maps
 
 ## Usage
-./xsk_prog_mode -i ${interface_name}
+```bash
+./xsk_prog_map_info -i ${interface_name}
+```
 
 ## Sample execution
 ```bash
-./xsk_prog_mode -i eno1
-Program ID:     17
-Attached mode:  XDP_ATTACHED_DRV - Attached with driver support
+./xsk_prog_map_info -i eno
+# netdev BPF program information
+        id: 14
+        attached mode: XDP_ATTACHED_DRV - Attached with driver support
+# netdev map information
+map 1 of 1
+        id: 13
+        name: xsks_map
+        type: XSK map
+        flags: 0x0
 ```
 
-## Testing
-Tested on Debian 10 Linux kernel 5.4.3
-
-Tested with libbpf ver. 0.0.7
-
-Compiled with GCC 8.3.0
+## Tested on platform
+| Software | Version   |
+|----------|-----------|
+| OS       | Debian 10 |
+| Kernel   | 5.4.0     |
+| GCC      | 8.3.0     |
+| libbpf   | 0.0.7     |
 
 ## Prerequirements
 Compile and install libbpf
 
-Linux kernel > 4.19
-
 ## Compilation
 ```bash
-export LD_LIBRARY_PATH=${path_of_libbpf}
-gcc -o xsk_prog_mode xsk_prog_mode.c -lbpf
+export LD_LIBRARY_PATH=${path_of_libbpf
+gcc -o xsk_prog_map_info xsk_prog_map_info.c -lbpf
 ```
 
+## Todo
+* Create test cases
+* Maps meta data
+* Option to scan all netdevs by default
+
 ## License
-MIT license
+MIT
