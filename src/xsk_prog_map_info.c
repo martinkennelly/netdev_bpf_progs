@@ -19,6 +19,33 @@
 #define MAX_PROG_NAME 1000
 #define MAX_ATTACH_MODE_NAME 50
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+// Based on kernel 5.4.0
+const char * const bpf_map_type_name[] = {
+	[BPF_MAP_TYPE_UNSPEC] 			= "Unspec",
+	[BPF_MAP_TYPE_HASH] 			= "Hash",
+	[BPF_MAP_TYPE_ARRAY] 			= "Array",
+	[BPF_MAP_TYPE_PROG_ARRAY] 		= "Prog array",
+	[BPF_MAP_TYPE_PERF_EVENT_ARRAY] 	= "Perf event array",
+	[BPF_MAP_TYPE_PERCPU_HASH] 		= "Per CPU hash",
+	[BPF_MAP_TYPE_PERCPU_ARRAY] 		= "Per CPU array",
+	[BPF_MAP_TYPE_STACK_TRACE] 		= "Stack trace",
+	[BPF_MAP_TYPE_CGROUP_ARRAY] 		= "Cgroup array",
+	[BPF_MAP_TYPE_LRU_HASH] 		= "LRU hash",
+	[BPF_MAP_TYPE_LRU_PERCPU_HASH] 		= "Per CPU hash",
+	[BPF_MAP_TYPE_LPM_TRIE] 		= "LPM trie",
+	[BPF_MAP_TYPE_ARRAY_OF_MAPS] 		= "Array of maps",
+	[BPF_MAP_TYPE_HASH_OF_MAPS] 		= "Hash of maps",
+	[BPF_MAP_TYPE_DEVMAP] 			= "Devmap",
+	[BPF_MAP_TYPE_SOCKMAP] 			= "Socket map",
+	[BPF_MAP_TYPE_CPUMAP] 			= "CPU map",
+	[BPF_MAP_TYPE_XSKMAP] 			= "XSK map",
+	[BPF_MAP_TYPE_SOCKHASH] 		= "Socket hash",
+	[BPF_MAP_TYPE_CGROUP_STORAGE] 		= "Cgroup storage",
+	[BPF_MAP_TYPE_REUSEPORT_SOCKARRAY] 	= "Reuseport socket array",
+};
+
 struct option_wrapper {
   struct option option;
   char *help;
@@ -148,6 +175,85 @@ int convert_attach_mode_str(struct config *cfg) {
      ret = -1;
   }
   return ret;
+}
+
+void print_map_details(__u32 prog_id)
+{
+  __u32 *map_ids, num_maps;
+  __u32 prog_len = sizeof(struct bpf_prog_info);
+  __u32 map_len = sizeof(struct bpf_map_info);
+  struct bpf_prog_info prog_info = {};
+  struct bpf_map_info map_info;
+  int err, prog_fd, map_fd;
+
+  prog_fd = bpf_prog_get_fd_by_id(prog_id);
+
+  if (prog_fd < 0) {
+    fprintf(stderr, "Error: Failed to get fd of BPF program\n");
+    exit(EXIT_FAIL);
+  }
+
+  err = bpf_obj_get_info_by_fd(prog_fd, &prog_info, &prog_len);
+
+  if(err) {
+    fprintf(stderr, "Error: Failed to get information about BPF program\n");
+    close(prog_fd);
+    exit(EXIT_FAIL);
+  }
+
+  num_maps = prog_info.nr_map_ids;
+  map_ids = calloc(num_maps, sizeof(*map_ids));
+
+  if (!map_ids) {
+    fprintf(stderr, "Error: Failed to allocate memory\n");
+    close(prog_fd);
+    exit(EXIT_FAIL);
+  }
+
+  memset(&prog_info, 0, prog_len);
+  prog_info.nr_map_ids = num_maps;
+  prog_info.map_ids = (__u64)(unsigned long)map_ids;
+
+  err = bpf_obj_get_info_by_fd(prog_fd, &prog_info, &prog_len);
+  close(prog_fd);
+
+  if (err) {
+    fprintf(stderr, "Error: Failed to get BPF program information\n");
+    free(map_ids);
+    exit(EXIT_FAIL);
+  }
+
+  if (num_maps)
+    printf("# netdev map information\n");
+
+  for (int i = 0; i < num_maps; i++) {
+    printf("map %d of %d\n", i+1, num_maps);
+    map_fd = bpf_map_get_fd_by_id(map_ids[i]);
+    if (map_fd < 0) {
+      fprintf(stderr, "Error: Failed to get map fd with map id '%u'", map_ids[i]);
+      continue;
+    }
+
+    err = bpf_obj_get_info_by_fd(map_fd, &map_info, &map_len);
+    if (err) {
+      fprintf(stderr, "Error: Failed to get map information\n");
+      close(map_fd);
+      continue;
+    }
+
+    printf("\tid: %u\n", map_ids[i]);
+    printf("\tname: %s\n", map_info.name);
+
+    if (map_info.type < ARRAY_SIZE(bpf_map_type_name))
+      printf("\ttype: %s\n", bpf_map_type_name[map_info.type]);
+    else
+      printf("\ttype: %u\n", map_info.type);
+
+    printf("\tflags: 0x%x\n", map_info.map_flags);
+
+    close(map_fd);
+   }
+  free(map_ids);
 }
 
 int main(int argc, char **argv)
